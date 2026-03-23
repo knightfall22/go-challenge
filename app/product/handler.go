@@ -18,7 +18,7 @@ type Response struct {
 type Product struct {
 	Code     string    `json:"code"`
 	Price    float64   `json:"price"`
-	Category string    `json:"category"`
+	Category []string  `json:"category"`
 	Variant  []Variant `json:"variant"`
 }
 
@@ -53,11 +53,15 @@ func (h *ProductHandler) HandleGet(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
+	categories := make([]string, len(product.Category))
+	for i, c := range product.Category {
+		categories[i] = c.Name
+	}
 	response := Response{
 		Product{
 			Code:     product.Code,
 			Price:    product.Price.InexactFloat64(),
-			Category: product.Category.Name,
+			Category: categories,
 			Variant:  variants,
 		},
 	}
