@@ -15,6 +15,7 @@ import (
 	"github.com/mytheresa/go-hiring-challenge/app/database"
 	"github.com/mytheresa/go-hiring-challenge/app/product"
 	"github.com/mytheresa/go-hiring-challenge/models"
+	"github.com/sirupsen/logrus"
 )
 
 func main() {
@@ -36,11 +37,14 @@ func main() {
 	)
 	defer close()
 
+	logger := logrus.New()
+	logger.SetFormatter(&logrus.JSONFormatter{})
+
 	// Initialize handlers
 	prodRepo := models.NewProductsRepository(db)
-	cat := catalog.NewCatalogHandler(prodRepo)
-	prod := product.NewCatalogHandler(prodRepo)
-	category := category.NewCatalogHandler(prodRepo)
+	cat := catalog.NewCatalogHandler(prodRepo, logger)
+	prod := product.NewProductHandler(prodRepo, logger)
+	category := category.NewCatalogHandler(prodRepo, logger)
 
 	// Set up routing
 	mux := http.NewServeMux()

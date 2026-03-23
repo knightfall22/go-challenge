@@ -9,6 +9,7 @@ import (
 
 	"github.com/mytheresa/go-hiring-challenge/models"
 	"github.com/mytheresa/go-hiring-challenge/models/mocks"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -104,7 +105,9 @@ func TestCategoryGetHandler(t *testing.T) {
 			mockRepo := new(mocks.DataStore)
 			tc.setupMock(mockRepo)
 
-			handler := NewCatalogHandler(mockRepo)
+			logger := logrus.New()
+			logger.SetFormatter(&logrus.JSONFormatter{})
+			handler := NewCatalogHandler(mockRepo, logger)
 
 			req := httptest.NewRequest(http.MethodGet, tc.targetURL, nil)
 			w := httptest.NewRecorder()
@@ -193,7 +196,9 @@ func TestCategoryPostHandler(t *testing.T) {
 			mockRepo := new(mocks.DataStore)
 			tc.setupMock(mockRepo)
 
-			handler := NewCatalogHandler(mockRepo)
+			logger := logrus.New()
+			logger.SetFormatter(&logrus.JSONFormatter{})
+			handler := NewCatalogHandler(mockRepo, logger)
 
 			bodyReader := bytes.NewReader([]byte(tc.requestBody))
 			req := httptest.NewRequest(http.MethodPost, "/categories", bodyReader)

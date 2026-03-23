@@ -5,10 +5,12 @@ import (
 
 	"github.com/mytheresa/go-hiring-challenge/app/api"
 	"github.com/mytheresa/go-hiring-challenge/models"
+	"github.com/sirupsen/logrus"
 )
 
 type ProductHandler struct {
-	repo models.DataStore
+	repo   models.DataStore
+	logger *logrus.Logger
 }
 
 type Response struct {
@@ -28,17 +30,20 @@ type Variant struct {
 	Price float64 `json:"price"`
 }
 
-func NewCatalogHandler(r models.DataStore) *ProductHandler {
+func NewProductHandler(r models.DataStore, log *logrus.Logger) *ProductHandler {
 	return &ProductHandler{
-		repo: r,
+		repo:   r,
+		logger: log.WithField("module", "Product").Logger,
 	}
 }
 
 func (h *ProductHandler) HandleGet(w http.ResponseWriter, r *http.Request) {
+	useLogger := h.logger.WithField("product", "HandleGet").Logger
 	code := r.PathValue("code")
 
 	product, err := h.repo.GetProduct(code)
 	if err != nil {
+		useLogger.WithError(err).Error("cannot find product")
 		api.ErrorResponse(w, http.StatusNotFound, "Product not found")
 		return
 	}

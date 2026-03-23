@@ -7,6 +7,7 @@ import (
 
 	"github.com/mytheresa/go-hiring-challenge/app/api"
 	"github.com/mytheresa/go-hiring-challenge/models"
+	"github.com/sirupsen/logrus"
 )
 
 type Response struct {
@@ -21,23 +22,30 @@ type Product struct {
 
 type CatalogHandler struct {
 	repo models.DataStore
+
+	logger *logrus.Logger
 }
 
-func NewCatalogHandler(r models.DataStore) *CatalogHandler {
+func NewCatalogHandler(r models.DataStore, log *logrus.Logger) *CatalogHandler {
 	return &CatalogHandler{
-		repo: r,
+		repo:   r,
+		logger: log.WithField("module", "Catalog").Logger,
 	}
 }
 
 func (h *CatalogHandler) HandleGet(w http.ResponseWriter, r *http.Request) {
+	useLogger := h.logger.WithField("catalog", "HandleGet").Logger
+
 	filter, err := h.parseCatalogFilters(r)
 	if err != nil {
+		useLogger.WithError(err).Error("failed to parse filters")
 		api.ErrorResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	res, err := h.repo.GetAllProducts(filter)
 	if err != nil {
+		useLogger.WithError(err).Error("failed to retrieve all products")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

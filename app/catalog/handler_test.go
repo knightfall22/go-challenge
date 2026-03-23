@@ -8,6 +8,7 @@ import (
 	"github.com/mytheresa/go-hiring-challenge/models"
 	"github.com/mytheresa/go-hiring-challenge/models/mocks"
 	"github.com/shopspring/decimal"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -71,7 +72,9 @@ func TestCatalogGetHandler(t *testing.T) {
 			mockRepo := new(mocks.DataStore)
 			tc.setupMock(mockRepo)
 
-			handler := NewCatalogHandler(mockRepo)
+			logger := logrus.New()
+			logger.SetFormatter(&logrus.JSONFormatter{})
+			handler := NewCatalogHandler(mockRepo, logger)
 
 			req := httptest.NewRequest(http.MethodGet, tc.targetURL, nil)
 			w := httptest.NewRecorder()
