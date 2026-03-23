@@ -8,6 +8,7 @@ import (
 
 	"github.com/mytheresa/go-hiring-challenge/app/api"
 	"github.com/mytheresa/go-hiring-challenge/models"
+	"github.com/sirupsen/logrus"
 )
 
 type Response struct {
@@ -20,16 +21,20 @@ type Category struct {
 }
 
 type CategoryHandler struct {
-	repo models.DataStore
+	repo   models.DataStore
+	logger *logrus.Logger
 }
 
-func NewCatalogHandler(r models.DataStore) *CategoryHandler {
+func NewCatalogHandler(r models.DataStore, log *logrus.Logger) *CategoryHandler {
 	return &CategoryHandler{
-		repo: r,
+		repo:   r,
+		logger: log.WithField("module", "Category").Logger,
 	}
 }
 
 func (h *CategoryHandler) HandlePost(w http.ResponseWriter, r *http.Request) {
+	useLogger := h.logger.WithField("category", "HandlePost").Logger
+
 	var addCategory models.AddCategory
 
 	decoder := json.NewDecoder(r.Body)
@@ -37,12 +42,14 @@ func (h *CategoryHandler) HandlePost(w http.ResponseWriter, r *http.Request) {
 	decoder.DisallowUnknownFields()
 
 	if err := decoder.Decode(&addCategory); err != nil {
-		api.ErrorResponse(w, http.StatusBadRequest, "Invalid JSON body: "+err.Error())
+		useLogger.WithError(err).Error("failed to decode input")
+		api.ErrorResponse(w, http.StatusBadRequest, "Invalid JSON body")
 		return
 	}
 
 	prodExists, err := h.repo.CheckProductExists(addCategory.ProductID)
 	if err != nil {
+		useLogger.WithError(err).Error("failed to check if product exists")
 		api.ErrorResponse(w, http.StatusInternalServerError, "internal failure")
 		return
 	}
@@ -54,6 +61,7 @@ func (h *CategoryHandler) HandlePost(w http.ResponseWriter, r *http.Request) {
 
 	err = h.repo.AddCategory(addCategory)
 	if err != nil {
+		useLogger.WithError(err).Error("failed to add category")
 		api.ErrorResponse(w, http.StatusInternalServerError, "internal failure")
 		return
 	}
@@ -67,14 +75,18 @@ func (h *CategoryHandler) HandlePost(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *CategoryHandler) HandleGet(w http.ResponseWriter, r *http.Request) {
+	useLogger := h.logger.WithField("category", "HandleGet").Logger
+
 	filter, err := h.parseCategoryFilters(r)
 	if err != nil {
+		useLogger.WithError(err).Error("failed to parse filters")
 		api.ErrorResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	res, err := h.repo.GetAllCategories(filter)
 	if err != nil {
+		useLogger.WithError(err).Error("failed to retrieve all categories")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
