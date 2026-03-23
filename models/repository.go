@@ -1,6 +1,7 @@
 package models
 
 import (
+	"github.com/shopspring/decimal"
 	"gorm.io/gorm"
 )
 
@@ -19,6 +20,7 @@ type GetProductsFilter struct {
 
 type DataStore interface {
 	GetAllProducts(query *GetProductsFilter) (*ProductList, error)
+	GetProduct(code string) (*Product, error)
 }
 
 type ProductsRepository struct {
@@ -55,4 +57,22 @@ func (r *ProductsRepository) GetAllProducts(query *GetProductsFilter) (*ProductL
 		return nil, err
 	}
 	return &ProductList{Products: products, TotalProducts: int(total)}, nil
+}
+
+func (r *ProductsRepository) GetProduct(code string) (*Product, error) {
+	var product Product
+
+	if err := r.db.Preload("Variants").
+		Preload("Category").
+		Where("code = ?", code).
+		First(&product).Error; err != nil {
+		return nil, err
+	}
+
+	for i := range product.Variants {
+		if decimal.Zero.Equal(product.Variants[i].Price) {
+			product.Variants[i].Price = product.Price
+		}
+	}
+	return &product, nil
 }
